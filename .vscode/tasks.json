@@ -1,0 +1,19 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "build",
+            "type": "shell",
+            "command": "g++",
+            "args": [
+                "--std", "c++14",
+                "-Wall",
+                "-ljsoncpp",
+                "-Wno-unknown-pragmas",
+                "-g", "src/Arquivos/Arquivos.cc",
+                "-g", "src/main/main.cc",
+                "-o", "bin/recommender"
+            ],
+        },
+    ]
+}
