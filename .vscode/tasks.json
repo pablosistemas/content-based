@@ -10,6 +10,10 @@
                 "-Wall",
                 "-ljsoncpp",
                 "-Wno-unknown-pragmas",
+                "-g", "src/Algoritmos/StopWords/StopWords.cc",
+                "-g", "src/Algoritmos/TF-IDF/TfIdf.cc",
+                "-g", "src/Algoritmos/Dice/Dice.cc",
+                "-g", "src/Estruturas/Item/Item.cc",
                 "-g", "src/Arquivos/Arquivos.cc",
                 "-g", "src/main/main.cc",
                 "-o", "bin/recommender"
