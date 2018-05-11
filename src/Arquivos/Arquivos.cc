@@ -1,5 +1,7 @@
 #include "../Algoritmos/StopWords/StopWords.h"
+#include "../Algoritmos/Cosseno/Cosseno.h"
 #include "../Algoritmos/TF-IDF/TfIdf.h"
+#include "../Algoritmos/Dice/Dice.h"
 #include "../Estruturas/Item/Item.h"
 #include "../Util/Util.h"
 #include "Arquivos.h"
@@ -95,31 +97,31 @@ namespace Arquivos {
         for (auto itm = biblioteca.begin(); itm != biblioteca.end(); itm++) {
             auto json = *itm->second.get();
 
-            for (auto itp = Content::PROPRIEDADES_TEXTO_JSON.begin();
-                itp != Content::PROPRIEDADES_TEXTO_JSON.end(); itp++) {
-                Json::Value &jsonParsed;
-                const string plot = json[*itp].asString();
-                const vector<string> tokens = split(plot, ' ');
-                auto novoPlot = preprocessador.pipeline(tokens);
-                calcularTfDocumento(itm->first, json);
-            }
+            const string plot = json["Plot"].asString();
+            const vector<string> tokens = split(plot, ' ');
+            palavrasChaveDocumentos[itm->first] = preprocessador.pipeline(tokens);
+            calcularTfDocumento(itm->first, palavrasChaveDocumentos[itm->first]);
         }
     }
 
-    void Content::calcularTfDocumento(const std::string &nomeDocumento, Json::Value &json) {
-        auto doc = criarVetorPalavrasDoJson(json);
-        for (auto &&palavra : doc) {
-            tfPorDocumento[nomeDocumento].insert(std::pair<std::string, double>(palavra, TfIdf::tf(doc, palavra)));
+    void Content::calcularTfDocumento(
+        const std::string &nomeDocumento,
+        const std::vector<std::string>& vetorPalavras) {
+        for (auto &&palavra : vetorPalavras) {
+            indiceInvertidoPalavras[palavra].insert(
+                std::pair<std::string, double>(
+                    nomeDocumento,
+                    TfIdf::tf(vetorPalavras, palavra)));
         }
     }
 
-    std::vector<std::string> Content::criarVetorPalavrasDoJson(Json::Value &json) {
+    /*std::vector<std::string> Content::criarVetorPalavrasDoJson(Json::Value &json) {
         std::vector<std::string> palavras;
         for (auto itp = Content::PROPRIEDADES_TEXTO_JSON.begin();
             itp != Content::PROPRIEDADES_TEXTO_JSON.end(); itp++) {
                 
         }
-    }
+    }*/
 
     vector<string> Content::split(const string& texto, const char delimitador) {
         vector<string> tokens;
@@ -133,12 +135,19 @@ namespace Arquivos {
     }
 
     void Content::calcularSimilaridades() {
-        for (auto itm = biblioteca.begin(); itm != biblioteca.end(); itm++) {
+        for (auto itm1 = biblioteca.begin(); itm1 != biblioteca.end(); itm1++) {
             for (auto itm2 = biblioteca.begin(); itm2 != biblioteca.end(); itm2++) {
-                if (itm->first == itm2->first) { continue; }
-                calcularCosseno(*itm->second.get(), *itm2->second.get());
+                if (itm1->first != itm2->first) {
+                    auto cossenoPlot = Cosseno::calcularSimilaridade(
+                        this->indiceInvertidoPalavras,
+                        palavrasChaveDocumentos,
+                        itm1->first,
+                        itm2->first);
+                    auto diceVetor = Dice::calcularCoeficiente(itm1->second, itm2->second);
+                    auto similaridade = (cossenoPlot + diceVetor) / 2.0;
+                    similaridades[itm1->first][itm2->first] = similaridades[itm1->first][itm2->first] = similaridade;
+                }
             }
         }
     }
-
 }

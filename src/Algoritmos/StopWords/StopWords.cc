@@ -61,8 +61,8 @@ namespace Algoritmos {
             // remover stop words
             auto palavraModificada = mudarCasePalavraMinuscula(palavra);
             if (palavraModificada != "") {
-                bool inserirPalavra = !compararStopWordsSemCase(palavra);
-                if (inserirPalavra) { docFiltrado.push_back(palavra); }
+                bool inserirPalavra = !compararStopWordsSemCase(palavraModificada);
+                if (inserirPalavra) { docFiltrado.push_back(palavraModificada); }
             }
         }
         return docFiltrado;

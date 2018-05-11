@@ -15,6 +15,7 @@
                 "-g", "src/Algoritmos/Dice/Dice.cc",
                 "-g", "src/Estruturas/Item/Item.cc",
                 "-g", "src/Arquivos/Arquivos.cc",
+                "-g", "src/Algoritmos/Cosseno/Cosseno.cc",
                 "-g", "src/main/main.cc",
                 "-o", "bin/recommender"
             ],
