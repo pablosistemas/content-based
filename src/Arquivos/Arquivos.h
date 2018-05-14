@@ -18,26 +18,48 @@ namespace Arquivos {
         static std::vector<std::string> PROPRIEDADES_JSON;
         static std::vector<std::string> PROPRIEDADES_TEXTO_JSON;
 
-        static std::map<std::string, std::map<std::string, double> > tfPorDocumento;
+        std::map<std::string, std::map<std::string, double> > indiceInvertidoTfDocumentosPalavras;
+        std::map<std::string, std::map<std::string, double> > indiceTfDocumentosPalavras;
+        std::map<std::string, double> indiceIdfPalavras;
 
-        std::map<std::string, std::map<std::string, std::vector<std::string> > > topicosDocumentos;
         std::map<std::string, std::map<std::string, std::shared_ptr<Item> > > historicoUsuario;
-        std::map<std::string, std::map<std::string, double> > indiceInvertidoPalavras;
         std::map<std::string, std::vector<std::string> > palavrasChaveDocumentos;
         std::map<std::string, std::map<std::string, double> > similaridades;
         std::map<std::string, std::shared_ptr<Json::Value> > biblioteca;
 
+        std::vector<std::string> listaDocumentos, listaPalavras;
+
+        std::vector<std::string> retornarListaIndicesDeMap(
+            std::map<std::string, std::map<std::string, double> >&);
+        
+        // Métodos Estáticos
+        static std::vector<std::string> split(const std::string&, const char);
+
         // Métodos
         std::tuple<std::string, std::string, double, time_t> parseAvaliacoes(std::string &);
         std::tuple<std::string, std::shared_ptr<Json::Value> > parseConteudo(std::string &);
+        std::tuple<std::string, std::string> parseAlvos(const std::string&);
+
         std::vector<std::string> criarVetorPalavrasDoJson(Json::Value &);
-        std::vector<std::string> split(const std::string&, const char);
+
+        void calcularTfDocumento(const std::string &, const std::vector<std::string>&);
+        void calcularIdfPalavras(
+            std::map<std::string, std::vector<std::string> >&,
+            std::vector<std::string>&);
+
         void lerInformacoesSobreItens(const std::string &);
         void lerHistoricoUsuarios(const std::string &);
-        void calcularTfDocumento(const std::string &, const std::vector<std::string>&);
-        void preProcessarDocumento();
-        void calcularSimilaridades();
+        void preProcessarDocumento(bool=true);
 
+        void calcularSimilaridades();
+        double calcularSimilaridadeItemAtualItensHistoricosUsuario(const std::string&, const std::string&);
+
+        double retornarAmostraDistribuicaoDados(double, double);
+
+        void pegarListaIndices();
+
+        void predicao(const std::string&);
+        double predizer(const std::string&, const std::string&);
     };
 }
 

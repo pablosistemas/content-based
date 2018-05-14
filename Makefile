@@ -7,4 +7,13 @@ OUTPUT=bin/recommender
 all: recommender
 
 recommender: $(MAIN)
-	$(CC) $(CFLAGS) $(MAIN) -o $(OUTPUT) $(LDFLAGS) 
+	rm -rf bin/* || true
+	mkdir bin
+	$(CC) $(CFLAGS) \
+	-g src/Algoritmos/StopWords/StopWords.cc \
+	-g src/Algoritmos/Cosseno/Cosseno.cc \
+	-g src/Algoritmos/TF-IDF/TfIdf.cc \
+	-g src/Algoritmos/Dice/Dice.cc \ 
+	-g src/Estruturas/Item/Item.cc \
+	-g src/Arquivos/Arquivos.cc \
+	$(MAIN) -o $(OUTPUT) $(LDFLAGS)

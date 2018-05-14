@@ -7,9 +7,13 @@
 #include "Arquivos.h"
 
 #include <jsoncpp/json/json.h>
-#include <fstream>
+#include <string.h>
 #include <sstream>
+#include <fstream>
+#include <memory>
+#include <random>
 #include <tuple>
+#include <cmath>
 #include <map>
 
 using namespace Algoritmos;
@@ -17,10 +21,12 @@ using namespace Estruturas;
 
 namespace Arquivos {
     // Membros estáticos
+
     std::vector<std::string> Content::PROPRIEDADES_TEXTO_JSON;
     std::vector<std::string> Content::PROPRIEDADES_JSON;
 
     // Implementação métodos
+
     void Content::lerInformacoesSobreItens(const std::string& caminho) {
         auto arquivo = std::ifstream (caminho);
         std::string linha;
@@ -92,13 +98,31 @@ namespace Arquivos {
         return std::make_tuple (usuarioId, itemId, strtod(rating.c_str(), NULL), strtol(timestamp.c_str(), NULL, 10));
     }
 
-    void Content::preProcessarDocumento() {
+    std::tuple<std::string, std::string> Content::parseAlvos(const std::string& linha) {
+        auto stream = std::stringstream(linha);
+        std::string usuarioId, itemId;
+        std::getline(stream, usuarioId, ':');
+        std::getline(stream, itemId, ',');
+        return std::make_tuple (usuarioId, itemId);
+    }
+
+    void Content::preProcessarDocumento(bool usarPlot) {
         StopWords preprocessador;
         for (auto itm = biblioteca.begin(); itm != biblioteca.end(); itm++) {
-            auto json = *itm->second.get();
+            auto json = itm->second.get();
+            string naoTokenizada = "";
 
-            const string plot = json["Plot"].asString();
-            const vector<string> tokens = split(plot, ' ');
+            for (auto propriedade = Content::PROPRIEDADES_TEXTO_JSON.begin();
+                propriedade != Content::PROPRIEDADES_TEXTO_JSON.end(); propriedade++){
+                string temporaria = (*json)[*propriedade].asString();
+                if(strcmp(temporaria.c_str(), "N/A") != 0)
+                    naoTokenizada += " " + temporaria;
+            }
+
+            if (usarPlot) {
+                naoTokenizada += (*json)["Plot"].asString();
+            }
+            const vector<string> tokens = split(naoTokenizada, ' ');
             palavrasChaveDocumentos[itm->first] = preprocessador.pipeline(tokens);
             calcularTfDocumento(itm->first, palavrasChaveDocumentos[itm->first]);
         }
@@ -108,20 +132,37 @@ namespace Arquivos {
         const std::string &nomeDocumento,
         const std::vector<std::string>& vetorPalavras) {
         for (auto &&palavra : vetorPalavras) {
-            indiceInvertidoPalavras[palavra].insert(
+            auto tf = TfIdf::tf(vetorPalavras, palavra);
+            indiceTfDocumentosPalavras[nomeDocumento].insert(
                 std::pair<std::string, double>(
-                    nomeDocumento,
-                    TfIdf::tf(vetorPalavras, palavra)));
+                    palavra, tf));
+            indiceInvertidoTfDocumentosPalavras[palavra].insert(
+                std::pair<std::string, double>(
+                    nomeDocumento, tf));
         }
     }
 
-    /*std::vector<std::string> Content::criarVetorPalavrasDoJson(Json::Value &json) {
-        std::vector<std::string> palavras;
-        for (auto itp = Content::PROPRIEDADES_TEXTO_JSON.begin();
-            itp != Content::PROPRIEDADES_TEXTO_JSON.end(); itp++) {
-                
+    std::vector<std::string> Content::retornarListaIndicesDeMap(
+        std::map<std::string, std::map<std::string, double> >& origemIndices) {
+        std::vector<std::string> indices;
+        indices.resize(origemIndices.size()); 
+        size_t idx = 0;
+        for (auto itm = origemIndices.begin(); itm != origemIndices.end(); itm++) {
+            indices[idx++] = itm->first;
         }
-    }*/
+        return indices;
+    }
+
+    void Content::calcularIdfPalavras(
+        std::map<std::string, std::vector<std::string> >& palavrasChaveDocumentos,
+        std::vector<std::string>& listaPalavras
+    ) {
+        std::map<std::string, double> listaIdfPalavras;
+        for(auto itd = listaPalavras.begin(); itd != listaPalavras.end(); itd++) {
+                listaIdfPalavras.insert(
+                    std::pair<std::string, double>(*itd, TfIdf::idf(palavrasChaveDocumentos, *itd)));
+        }
+    }
 
     vector<string> Content::split(const string& texto, const char delimitador) {
         vector<string> tokens;
@@ -138,16 +179,78 @@ namespace Arquivos {
         for (auto itm1 = biblioteca.begin(); itm1 != biblioteca.end(); itm1++) {
             for (auto itm2 = biblioteca.begin(); itm2 != biblioteca.end(); itm2++) {
                 if (itm1->first != itm2->first) {
-                    auto cossenoPlot = Cosseno::calcularSimilaridade(
-                        this->indiceInvertidoPalavras,
+                    /*auto cossenoPlot = Cosseno::calcularSimilaridade(
+                        this->indiceInvertidoTfDocumentosPalavras,
                         palavrasChaveDocumentos,
                         itm1->first,
-                        itm2->first);
+                        itm2->first);*/
                     auto diceVetor = Dice::calcularCoeficiente(itm1->second, itm2->second);
-                    auto similaridade = (cossenoPlot + diceVetor) / 2.0;
+                    //auto similaridade = (cossenoPlot + diceVetor) / 2.0;
+                    auto similaridade = diceVetor;
                     similaridades[itm1->first][itm2->first] = similaridades[itm1->first][itm2->first] = similaridade;
                 }
             }
         }
+    }
+
+    void Content::predicao(const std::string& caminho) {
+        auto arquivo = std::ifstream (caminho);
+        std::string linha;
+
+        // descarta linha titulo
+        std::getline(arquivo, linha, '\n');
+        std::cout << "UserId:ItemId,Prediction" << std::endl;
+        while(arquivo.good()){
+            std::getline(arquivo, linha, '\n');
+            if (linha != "") {
+                auto par_usuario_item_id = parseAlvos(linha);
+                auto predicao = predizer(
+                    std::get<0>(par_usuario_item_id),
+                    std::get<1>(par_usuario_item_id));
+                std::cout << std::get<0>(par_usuario_item_id) << ":" << std::get<1>(par_usuario_item_id) << "," << predicao << std::endl;          
+            }
+        }
+        arquivo.close();
+    }
+
+    double Content::predizer(const std::string& usuarioId, const std::string& itemId) {
+        return calcularSimilaridadeItemAtualItensHistoricosUsuario(itemId, usuarioId);
+    }
+
+    double Content::calcularSimilaridadeItemAtualItensHistoricosUsuario(
+        const std::string& itemId, const std::string& usuarioId) {
+        if (biblioteca.count(itemId) == 0) {
+            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
+        }
+        double num = 0;
+        double den = 0;
+        for(auto it = historicoUsuario[usuarioId].begin(); it != historicoUsuario[usuarioId].end(); it++) {
+            if (similaridades[itemId].count(it->first) == 0) {
+                auto similaridadeCosseno = Cosseno::calcularSimilaridade(
+                    this->indiceInvertidoTfDocumentosPalavras,
+                    palavrasChaveDocumentos,
+                    itemId,
+                    it->first);
+
+                //auto similaridadeDice = Dice::calcularCoeficiente(biblioteca[itemId], biblioteca[it->first]);
+                //auto similaridade = (similaridadeCosseno + similaridadeDice) / 2.0;
+                auto similaridade = similaridadeCosseno;
+                similaridades[itemId][it->first] = similaridades[itemId][it->first] = similaridade;
+            }
+
+            num += similaridades[itemId][it->first] * it->second.get()->avaliacao;
+            den += similaridades[itemId][it->first];
+        }
+        if ((int)std::abs(den) == 0) { 
+            // Use imdb rating
+            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
+        }
+        return num/den;
+    }
+
+    double Content::retornarAmostraDistribuicaoDados(double shape, double scale) {
+        std::default_random_engine gen;
+        std::weibull_distribution<double> dist(shape, scale);
+        return std::floor(dist(gen));
     }
 }

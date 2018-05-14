@@ -3,7 +3,6 @@
 
 namespace Algoritmos {
     struct Preditor {
-        double predizerAvaliacao(const std::string&, const std::string&);
     };
 };
 

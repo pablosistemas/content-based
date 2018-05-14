@@ -36,12 +36,11 @@ namespace Algoritmos {
         // TODO: Preprocessar stopwords para evitar comparar you're por youre, por exemplo
 
         ifstream fp;
-        fp.open("../../../data/stop_words_english.txt");
-        if (fp.is_open()) {
+        fp.open("data/stop_words_english.txt");
+        if (!fp.is_open()) {
             cout << strerror(errno) << endl;
         }
         
-        vector<string> stopWords;
         string palavra;
 
         while(getline(fp, palavra)) {
