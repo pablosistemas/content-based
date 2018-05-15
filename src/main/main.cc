@@ -21,9 +21,10 @@ int main (int argc, char** argv) {
     Content::PROPRIEDADES_TEXTO_JSON = std::vector<std::string> {
             "Genre", "Director", "Writer", "Actors", "Language", "Country", "Awards" };
 
-    conteudo.lerInformacoesSobreItens(std::string(argv[1]));
+    conteudo.construirInformacoesSobreItens(std::string(argv[1]));
     conteudo.preProcessarDocumento(false);
-    conteudo.lerHistoricoUsuarios(std::string(argv[2]));
+    conteudo.construirHistoricoUsuarios(std::string(argv[2]));
+    // conteudo.construirVetorMedioUsuarios();
 
     // conteudo.listaDocumentos = conteudo.retornarListaIndicesDeMap(conteudo.indiceTfDocumentosPalavras);
     conteudo.listaPalavras = conteudo.retornarListaIndicesDeMap(conteudo.indiceInvertidoTfDocumentosPalavras);

@@ -20,6 +20,9 @@ namespace Arquivos {
 
         std::map<std::string, std::map<std::string, double> > indiceInvertidoTfDocumentosPalavras;
         std::map<std::string, std::map<std::string, double> > indiceTfDocumentosPalavras;
+
+        std::map<std::string, std::map<std::string, double> > vetorMedioPorUsuario;
+
         std::map<std::string, double> indiceIdfPalavras;
 
         std::map<std::string, std::map<std::string, std::shared_ptr<Item> > > historicoUsuario;
@@ -42,17 +45,19 @@ namespace Arquivos {
 
         std::vector<std::string> criarVetorPalavrasDoJson(Json::Value &);
 
-        void calcularTfDocumento(const std::string &, const std::vector<std::string>&);
-        void calcularIdfPalavras(
-            std::map<std::string, std::vector<std::string> >&,
-            std::vector<std::string>&);
+        void calcularIdfPalavras(std::map<std::string, std::vector<std::string> >&, std::vector<std::string>&);
+        void calcularTfDocumento(const std::string&, const std::vector<std::string>&);
+        void calcularIdfPalavra(const std::vector<std::string>&);
 
-        void lerInformacoesSobreItens(const std::string &);
-        void lerHistoricoUsuarios(const std::string &);
+        void construirInformacoesSobreItens(const std::string &);
+        void construirHistoricoUsuarios(const std::string &);
+        void construirVetorMedioUsuarios();
+
         void preProcessarDocumento(bool=true);
 
         void calcularSimilaridades();
         double calcularSimilaridadeItemAtualItensHistoricosUsuario(const std::string&, const std::string&);
+        double calcularPredicaoAPartirVetorMedioUsuario(const std::string&, const std::string&);
 
         double retornarAmostraDistribuicaoDados(double, double);
 

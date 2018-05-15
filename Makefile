@@ -7,7 +7,7 @@ OUTPUT=bin/recommender
 all: recommender
 
 recommender: $(MAIN)
-	rm -rf bin/* || true
+	rm -rf bin || true
 	mkdir bin
 	$(CC) $(CFLAGS) \
 	-g src/Algoritmos/StopWords/StopWords.cc \

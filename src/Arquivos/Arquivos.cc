@@ -12,6 +12,7 @@
 #include <fstream>
 #include <memory>
 #include <random>
+#include <cmath>
 #include <tuple>
 #include <cmath>
 #include <map>
@@ -27,7 +28,7 @@ namespace Arquivos {
 
     // Implementação métodos
 
-    void Content::lerInformacoesSobreItens(const std::string& caminho) {
+    void Content::construirInformacoesSobreItens(const std::string& caminho) {
         auto arquivo = std::ifstream (caminho);
         std::string linha;
 
@@ -48,12 +49,36 @@ namespace Arquivos {
         arquivo.close();
     }
 
-    void Content::lerHistoricoUsuarios(const std::string &caminho) {
+    void Content::construirVetorMedioUsuarios() {
+
+        for (auto it = historicoUsuario.begin(); it != historicoUsuario.end(); it++) {
+            auto usuarioId = it->first;
+            size_t numeroElementos = 0;
+
+            for (auto itu = it->second.begin(); itu != it->second.end(); itu++) {
+                auto itemId = itu->first;
+                auto itemT = itu->second.get()->avaliacao;
+                if (vetorMedioPorUsuario[usuarioId].count(itemId) == 0) {
+                    vetorMedioPorUsuario[usuarioId][itemId] = itemT;
+                } else {
+                    vetorMedioPorUsuario[usuarioId][itemId] += itemT;
+                }
+                numeroElementos++;
+            }
+
+            for (auto itv = vetorMedioPorUsuario[usuarioId].begin(); itv != vetorMedioPorUsuario[usuarioId].end(); itv++) {
+                itv->second = itv->second/numeroElementos;
+            }
+        }
+    }
+
+    void Content::construirHistoricoUsuarios(const std::string &caminho) {
         auto arquivo = std::ifstream (caminho);
         std::string linha;
 
         // descarta linha titulo
         std::getline(arquivo, linha, '\n');
+
         while(arquivo.good()){
             std::getline(arquivo, linha, '\n');
             if (linha != "") {
@@ -125,6 +150,7 @@ namespace Arquivos {
             const vector<string> tokens = split(naoTokenizada, ' ');
             palavrasChaveDocumentos[itm->first] = preprocessador.pipeline(tokens);
             calcularTfDocumento(itm->first, palavrasChaveDocumentos[itm->first]);
+            calcularIdfPalavra(palavrasChaveDocumentos[itm->first]);
         }
     }
 
@@ -161,6 +187,16 @@ namespace Arquivos {
         for(auto itd = listaPalavras.begin(); itd != listaPalavras.end(); itd++) {
                 listaIdfPalavras.insert(
                     std::pair<std::string, double>(*itd, TfIdf::idf(palavrasChaveDocumentos, *itd)));
+        }
+    }
+
+    void Content::calcularIdfPalavra(const std::vector<std::string>& palavras) {
+        for (auto palavra = palavras.begin(); palavra != palavras.end(); palavra++) {
+            if (indiceIdfPalavras.count(*palavra) == 0) {
+                indiceIdfPalavras[*palavra] = 1;
+            } else {
+                indiceIdfPalavras[*palavra]++;
+            }
         }
     }
 
@@ -215,6 +251,27 @@ namespace Arquivos {
 
     double Content::predizer(const std::string& usuarioId, const std::string& itemId) {
         return calcularSimilaridadeItemAtualItensHistoricosUsuario(itemId, usuarioId);
+        // return calcularPredicaoAPartirVetorMedioUsuario(itemId, usuarioId);
+    }
+
+    double Content::calcularPredicaoAPartirVetorMedioUsuario(
+        const std::string& itemId, const std::string& usuarioId) {
+        double num = 0.0;
+        double den1, den2;
+        den1 = den2 = 0.0;
+        for(auto it = listaPalavras.begin(); it != listaPalavras.end(); it++) {
+            double sim1 = vetorMedioPorUsuario[usuarioId][*it];
+            double sim2 = indiceTfDocumentosPalavras[itemId][*it];
+            if (vetorMedioPorUsuario[usuarioId].count(*it) > 0 && indiceTfDocumentosPalavras[itemId].count(*it) > 0) {
+                num += sim1 * sim2;
+            }
+            den1 += sim1 * sim1;
+            den2 += sim2 * sim2;
+        }
+        if (den1 == 0.0 || den2 == 0.0) {
+            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
+        }
+        return num/(std::sqrt(den1) * std::sqrt(den2));
     }
 
     double Content::calcularSimilaridadeItemAtualItensHistoricosUsuario(
@@ -229,6 +286,7 @@ namespace Arquivos {
                 auto similaridadeCosseno = Cosseno::calcularSimilaridade(
                     this->indiceInvertidoTfDocumentosPalavras,
                     palavrasChaveDocumentos,
+                    this->indiceIdfPalavras,
                     itemId,
                     it->first);
 
