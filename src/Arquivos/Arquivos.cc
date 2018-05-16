@@ -135,41 +135,94 @@ namespace Arquivos {
         StopWords preprocessador;
         for (auto itm = biblioteca.begin(); itm != biblioteca.end(); itm++) {
             auto json = itm->second.get();
-            string naoTokenizada = "";
+            string naoTokenizada;
 
             for (auto propriedade = Content::PROPRIEDADES_TEXTO_JSON.begin();
                 propriedade != Content::PROPRIEDADES_TEXTO_JSON.end(); propriedade++){
                 string temporaria = (*json)[*propriedade].asString();
-                if(strcmp(temporaria.c_str(), "N/A") != 0)
-                    naoTokenizada += " " + temporaria;
+                if(strcmp(temporaria.c_str(), "N/A") != 0) {
+                    if (naoTokenizada.size() > 0)
+                        naoTokenizada += " " + temporaria;
+                    else 
+                        naoTokenizada = temporaria;
+                }
             }
 
-            if (usarPlot) {
-                naoTokenizada += (*json)["Plot"].asString();
-            }
-            const vector<string> tokens = split(naoTokenizada, ' ');
+            vector<string> tokens = split(naoTokenizada, ' ');
             palavrasChaveDocumentos[itm->first] = preprocessador.pipeline(tokens);
             calcularTfDocumento(itm->first, palavrasChaveDocumentos[itm->first]);
+
+            if (usarPlot) {
+                auto plotTemporario = (*json)["Plot"].asString();
+                if(strcmp(plotTemporario.c_str(), "N/A") != 0) {
+                    naoTokenizada = plotTemporario;
+                    tokens = split(naoTokenizada, ' ');
+                    auto plotTokenizado = preprocessador.pipeline(tokens);
+                    plotTokenizado = calcularTfDocumento(itm->first, plotTokenizado, 10);
+                    auto itv = palavrasChaveDocumentos[itm->first].begin() + palavrasChaveDocumentos[itm->first].size();
+                    palavrasChaveDocumentos[itm->first].insert(itv, plotTokenizado.begin(), plotTokenizado.end());
+                }
+            }
+
             calcularIdfPalavra(palavrasChaveDocumentos[itm->first]);
         }
     }
 
-    void Content::calcularTfDocumento(
-        const std::string &nomeDocumento,
-        const std::vector<std::string>& vetorPalavras) {
-        for (auto &&palavra : vetorPalavras) {
-            auto tf = TfIdf::tf(vetorPalavras, palavra);
+    bool Content::insereEmIndicesTf(const std::string& nomeDocumento, const std::string& palavra, double tf) {
+        if (indiceTfDocumentosPalavras[nomeDocumento].count(palavra) == 0) {
             indiceTfDocumentosPalavras[nomeDocumento].insert(
                 std::pair<std::string, double>(
                     palavra, tf));
             indiceInvertidoTfDocumentosPalavras[palavra].insert(
                 std::pair<std::string, double>(
                     nomeDocumento, tf));
+            return true;
+        } else {
+            indiceTfDocumentosPalavras[nomeDocumento][palavra] = std::max(
+                tf,
+                indiceTfDocumentosPalavras[nomeDocumento][palavra]);
+            indiceInvertidoTfDocumentosPalavras[palavra][nomeDocumento] = std::max(
+                tf,
+                indiceInvertidoTfDocumentosPalavras[palavra][nomeDocumento]);
+            return false;
+        }
+    }
+
+    std::vector<std::string> Content::calcularTfDocumento(
+        const std::string &nomeDocumento,
+        const std::vector<std::string>& vetorPalavras, int K) {
+        std::vector<std::string> vetorPalavrasFrequentes;
+        if (K == -1) {
+            for (auto &&palavra : vetorPalavras) {
+                auto tf = TfIdf::tf(vetorPalavras, palavra);
+                if (insereEmIndicesTf(nomeDocumento, palavra, tf)) {
+                    vetorPalavrasFrequentes.push_back(palavra);
+                }
+            }
+            return vetorPalavras;
+        } else {
+            std::map<double, std::string> palavrasMaisFrequentes;
+            for (auto &&palavra : vetorPalavras) {
+                auto tf = TfIdf::tf(vetorPalavras, palavra);
+                palavrasMaisFrequentes.insert(
+                    std::pair<double, std::string>(
+                        tf, palavra));
+            }
+            auto itm = palavrasMaisFrequentes.begin();
+            int k = 0;
+            std::vector<std::string> vetorPalavrasFrequentes; //(std::min((size_t)K, palavrasMaisFrequentes.size()));
+            while (k < K && itm != palavrasMaisFrequentes.end()) {
+                if (insereEmIndicesTf(nomeDocumento, itm->second, itm->first)) {
+                    vetorPalavrasFrequentes.push_back(itm->second);
+                }
+                itm++;
+            }
+            return vetorPalavrasFrequentes;
         }
     }
 
     std::vector<std::string> Content::retornarListaIndicesDeMap(
-        std::map<std::string, std::map<std::string, double> >& origemIndices) {
+        std::unordered_map<std::string, std::unordered_map<std::string, double> >& origemIndices) {
         std::vector<std::string> indices;
         indices.resize(origemIndices.size()); 
         size_t idx = 0;
@@ -180,7 +233,7 @@ namespace Arquivos {
     }
 
     void Content::calcularIdfPalavras(
-        std::map<std::string, std::vector<std::string> >& palavrasChaveDocumentos,
+        std::unordered_map<std::string, std::vector<std::string> >& palavrasChaveDocumentos,
         std::vector<std::string>& listaPalavras
     ) {
         std::map<std::string, double> listaIdfPalavras;
@@ -277,7 +330,7 @@ namespace Arquivos {
     double Content::calcularSimilaridadeItemAtualItensHistoricosUsuario(
         const std::string& itemId, const std::string& usuarioId) {
         if (biblioteca.count(itemId) == 0) {
-            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
+            return std::round(retornarAmostraDistribuicaoDados(4.659206, 7.962903));
         }
         double num = 0;
         double den = 0;
@@ -290,8 +343,8 @@ namespace Arquivos {
                     itemId,
                     it->first);
 
-                //auto similaridadeDice = Dice::calcularCoeficiente(biblioteca[itemId], biblioteca[it->first]);
-                //auto similaridade = (similaridadeCosseno + similaridadeDice) / 2.0;
+                // auto similaridadeDice = Dice::calcularCoeficiente(biblioteca[itemId], biblioteca[it->first]);
+                // auto similaridade = (similaridadeCosseno + similaridadeDice) / 2.0;
                 auto similaridade = similaridadeCosseno;
                 similaridades[itemId][it->first] = similaridades[itemId][it->first] = similaridade;
             }
@@ -300,10 +353,9 @@ namespace Arquivos {
             den += similaridades[itemId][it->first];
         }
         if ((int)std::abs(den) == 0) { 
-            // Use imdb rating
-            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
+            return std::round(retornarAmostraDistribuicaoDados(4.659206, 7.962903));
         }
-        return num/den;
+        return std::round(num/den);
     }
 
     double Content::retornarAmostraDistribuicaoDados(double shape, double scale) {

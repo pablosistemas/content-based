@@ -3,6 +3,7 @@
 
 #include "../../Estruturas/Item/Item.h"
 #include <jsoncpp/json/json.h>
+#include <unordered_map>
 #include <vector>
 #include <memory>
 #include <map>
@@ -10,9 +11,9 @@
 namespace Algoritmos {
     struct Cosseno {
         static double calcularSimilaridade(
-            std::map<std::string, std::map<std::string, double> >&,
-            std::map<std::string, std::vector<std::string> >&,
-            std::map<std::string, double>&,
+            std::unordered_map<std::string, std::unordered_map<std::string, double> >&,
+            std::unordered_map<std::string, std::vector<std::string> >&,
+            std::unordered_map<std::string, double>&,
             const std::string&,
             const std::string&);
     };

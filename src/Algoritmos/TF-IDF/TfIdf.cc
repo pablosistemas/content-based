@@ -19,7 +19,7 @@ namespace Algoritmos {
         return tf/doc.size();
     }
 
-    double TfIdf::idf(const std::map<std::string, std::vector<std::string> >& docs, const string& termo) {
+    double TfIdf::idf(const std::unordered_map<std::string, std::vector<std::string> >& docs, const string& termo) {
         double n = 0;
         for (auto doc = docs.begin(); doc != docs.end(); doc++) {
             for (auto palavra = doc->second.begin(); palavra != doc->second.end(); palavra++) {
@@ -30,9 +30,5 @@ namespace Algoritmos {
             }
         }
         return log(docs.size() / n);
-    }
-
-    double TfIdf::tfIdf(const vector<string>& doc, const vector<vector<string>>& docs, const string& termo) {
-        // return tf(doc, termo) * idf(docs, termo);
     }
 }

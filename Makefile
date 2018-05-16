@@ -13,7 +13,7 @@ recommender: $(MAIN)
 	-g src/Algoritmos/StopWords/StopWords.cc \
 	-g src/Algoritmos/Cosseno/Cosseno.cc \
 	-g src/Algoritmos/TF-IDF/TfIdf.cc \
-	-g src/Algoritmos/Dice/Dice.cc \ 
+	-g src/Algoritmos/Dice/Dice.cc \
 	-g src/Estruturas/Item/Item.cc \
 	-g src/Arquivos/Arquivos.cc \
 	$(MAIN) -o $(OUTPUT) $(LDFLAGS)
