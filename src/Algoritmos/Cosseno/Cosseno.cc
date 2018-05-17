@@ -22,7 +22,6 @@ namespace Algoritmos {
                     auto tf = val1 * val2;
                     auto idf = (std::log(palavrasChaveDocumentos.size()/indiceIdfPalavras[*itv]));
                     num += (tf * idf * idf);
-                    // num = tf;
                 }
                 den1 += (val1 * val1);
                 den2 += (val2 * val2); 

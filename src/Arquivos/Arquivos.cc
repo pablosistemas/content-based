@@ -1,4 +1,6 @@
+#include "../Algoritmos/Similaridade/Similaridade.h"
 #include "../Algoritmos/StopWords/StopWords.h"
+#include "../Algoritmos/Preditor/Preditor.h"
 #include "../Algoritmos/Cosseno/Cosseno.h"
 #include "../Algoritmos/TF-IDF/TfIdf.h"
 #include "../Algoritmos/Dice/Dice.h"
@@ -6,43 +8,43 @@
 #include "../Util/Util.h"
 #include "Arquivos.h"
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <string.h>
+#include <iostream>
 #include <sstream>
 #include <fstream>
 #include <memory>
-#include <random>
-#include <cmath>
 #include <tuple>
 #include <cmath>
 #include <map>
 
+using namespace std;
 using namespace Algoritmos;
 using namespace Estruturas;
 
 namespace Arquivos {
     // Membros estáticos
 
-    std::vector<std::string> Content::PROPRIEDADES_TEXTO_JSON;
-    std::vector<std::string> Content::PROPRIEDADES_JSON;
+    vector<string> Content::PROPRIEDADES_TEXTO_JSON;
+    vector<string> Content::PROPRIEDADES_JSON;
 
     // Implementação métodos
 
-    void Content::construirInformacoesSobreItens(const std::string& caminho) {
-        auto arquivo = std::ifstream (caminho);
-        std::string linha;
+    void Content::construirInformacoesSobreItens(const string& caminho) {
+        auto arquivo = ifstream (caminho);
+        string linha;
 
         // descarta linha titulo
-        std::getline(arquivo, linha, '\n');
+        getline(arquivo, linha, '\n');
         while(arquivo.good()){
-            std::getline(arquivo, linha, '\n');
+            getline(arquivo, linha, '\n');
             if (linha != "") {
                 auto par_id_conteudo = parseConteudo(linha);
 
                 biblioteca.insert(
-                    std::pair<std::string, std::shared_ptr<Json::Value> >(
-                        std::get<0>(par_id_conteudo),
-                        std::get<1>(par_id_conteudo)
+                    pair<string, shared_ptr<Json::Value> >(
+                        get<0>(par_id_conteudo),
+                        get<1>(par_id_conteudo)
                     ));
             }
         }
@@ -72,63 +74,63 @@ namespace Arquivos {
         }
     }
 
-    void Content::construirHistoricoUsuarios(const std::string &caminho) {
-        auto arquivo = std::ifstream (caminho);
-        std::string linha;
+    void Content::construirHistoricoUsuarios(const string &caminho) {
+        auto arquivo = ifstream (caminho);
+        string linha;
 
         // descarta linha titulo
-        std::getline(arquivo, linha, '\n');
+        getline(arquivo, linha, '\n');
 
         while(arquivo.good()){
-            std::getline(arquivo, linha, '\n');
+            getline(arquivo, linha, '\n');
             if (linha != "") {
                 auto par_usuario_item = parseAvaliacoes(linha);
-                auto itemId = std::get<1>(par_usuario_item);
-                auto usuarioId = std::get<0>(par_usuario_item);
-                auto avaliacao = std::get<2>(par_usuario_item);
-                auto timestamp = std::get<3>(par_usuario_item);
+                auto itemId = get<1>(par_usuario_item);
+                auto usuarioId = get<0>(par_usuario_item);
+                auto avaliacao = get<2>(par_usuario_item);
+                auto timestamp = get<3>(par_usuario_item);
 
                 if (historicoUsuario[usuarioId].count(itemId) == 0) {
-                    std::shared_ptr<Item> ptr = std::shared_ptr<Item>(
+                    shared_ptr<Item> ptr = shared_ptr<Item>(
                                     new Item(avaliacao, timestamp), Util::destrutorItem);
                     historicoUsuario[usuarioId].insert(
-                        std::pair<std::string, std::shared_ptr<Item> >(
+                        pair<string, shared_ptr<Item> >(
                             itemId,
-                            std::shared_ptr<Item>(new Item(avaliacao, timestamp), Util::destrutorItem)));
+                            shared_ptr<Item>(new Item(avaliacao, timestamp), Util::destrutorItem)));
                 }
             }
         }
         arquivo.close();
     }
 
-    std::tuple<std::string, std::shared_ptr<Json::Value> > Content::parseConteudo(std::string &linha) {
+    tuple<string, shared_ptr<Json::Value> > Content::parseConteudo(string &linha) {
         Json::Reader leitor;
-        auto stream = std::stringstream(linha);
-        std::string item_id, imdb;
-        std::getline(stream, item_id, ',');
-        std::getline(stream, imdb, '\n');
+        auto stream = stringstream(linha);
+        string item_id, imdb;
+        getline(stream, item_id, ',');
+        getline(stream, imdb, '\n');
         auto obj = new Json::Value();
         leitor.parse(imdb, *obj);
-        return std::make_tuple (item_id, std::shared_ptr<Json::Value>(obj, Util::destrutor));
+        return make_tuple (item_id, shared_ptr<Json::Value>(obj, Util::destrutor));
     }
 
-    std::tuple<std::string, std::string, double, time_t> Content::parseAvaliacoes(std::string &linha) {
+    tuple<string, string, double, time_t> Content::parseAvaliacoes(string &linha) {
         Json::Reader leitor;
-        auto stream = std::stringstream(linha);
-        std::string usuarioId, itemId, rating, timestamp;
-        std::getline(stream, usuarioId, ':');
-        std::getline(stream, itemId, ',');
-        std::getline(stream, rating, ',');
-        std::getline(stream, timestamp, '\n');
-        return std::make_tuple (usuarioId, itemId, strtod(rating.c_str(), NULL), strtol(timestamp.c_str(), NULL, 10));
+        auto stream = stringstream(linha);
+        string usuarioId, itemId, rating, timestamp;
+        getline(stream, usuarioId, ':');
+        getline(stream, itemId, ',');
+        getline(stream, rating, ',');
+        getline(stream, timestamp, '\n');
+        return make_tuple (usuarioId, itemId, strtod(rating.c_str(), NULL), strtol(timestamp.c_str(), NULL, 10));
     }
 
-    std::tuple<std::string, std::string> Content::parseAlvos(const std::string& linha) {
-        auto stream = std::stringstream(linha);
-        std::string usuarioId, itemId;
-        std::getline(stream, usuarioId, ':');
-        std::getline(stream, itemId, ',');
-        return std::make_tuple (usuarioId, itemId);
+    tuple<string, string> Content::parseAlvos(const string& linha) {
+        auto stream = stringstream(linha);
+        string usuarioId, itemId;
+        getline(stream, usuarioId, ':');
+        getline(stream, itemId, ',');
+        return make_tuple (usuarioId, itemId);
     }
 
     void Content::preProcessarDocumento(bool usarPlot) {
@@ -168,30 +170,30 @@ namespace Arquivos {
         }
     }
 
-    bool Content::insereEmIndicesTf(const std::string& nomeDocumento, const std::string& palavra, double tf) {
+    bool Content::insereEmIndicesTf(const string& nomeDocumento, const string& palavra, double tf) {
         if (indiceTfDocumentosPalavras[nomeDocumento].count(palavra) == 0) {
             indiceTfDocumentosPalavras[nomeDocumento].insert(
-                std::pair<std::string, double>(
+                pair<string, double>(
                     palavra, tf));
             indiceInvertidoTfDocumentosPalavras[palavra].insert(
-                std::pair<std::string, double>(
+                pair<string, double>(
                     nomeDocumento, tf));
             return true;
         } else {
-            indiceTfDocumentosPalavras[nomeDocumento][palavra] = std::max(
+            indiceTfDocumentosPalavras[nomeDocumento][palavra] = max(
                 tf,
                 indiceTfDocumentosPalavras[nomeDocumento][palavra]);
-            indiceInvertidoTfDocumentosPalavras[palavra][nomeDocumento] = std::max(
+            indiceInvertidoTfDocumentosPalavras[palavra][nomeDocumento] = max(
                 tf,
                 indiceInvertidoTfDocumentosPalavras[palavra][nomeDocumento]);
             return false;
         }
     }
 
-    std::vector<std::string> Content::calcularTfDocumento(
-        const std::string &nomeDocumento,
-        const std::vector<std::string>& vetorPalavras, int K) {
-        std::vector<std::string> vetorPalavrasFrequentes;
+    vector<string> Content::calcularTfDocumento(
+        const string &nomeDocumento,
+        const vector<string>& vetorPalavras, int K) {
+        vector<string> vetorPalavrasFrequentes;
         if (K == -1) {
             for (auto &&palavra : vetorPalavras) {
                 auto tf = TfIdf::tf(vetorPalavras, palavra);
@@ -201,16 +203,16 @@ namespace Arquivos {
             }
             return vetorPalavras;
         } else {
-            std::map<double, std::string> palavrasMaisFrequentes;
+            map<double, string> palavrasMaisFrequentes;
             for (auto &&palavra : vetorPalavras) {
                 auto tf = TfIdf::tf(vetorPalavras, palavra);
                 palavrasMaisFrequentes.insert(
-                    std::pair<double, std::string>(
+                    pair<double, string>(
                         tf, palavra));
             }
             auto itm = palavrasMaisFrequentes.begin();
             int k = 0;
-            std::vector<std::string> vetorPalavrasFrequentes; //(std::min((size_t)K, palavrasMaisFrequentes.size()));
+            vector<string> vetorPalavrasFrequentes; //(min((size_t)K, palavrasMaisFrequentes.size()));
             while (k < K && itm != palavrasMaisFrequentes.end()) {
                 if (insereEmIndicesTf(nomeDocumento, itm->second, itm->first)) {
                     vetorPalavrasFrequentes.push_back(itm->second);
@@ -221,9 +223,9 @@ namespace Arquivos {
         }
     }
 
-    std::vector<std::string> Content::retornarListaIndicesDeMap(
-        std::unordered_map<std::string, std::unordered_map<std::string, double> >& origemIndices) {
-        std::vector<std::string> indices;
+    vector<string> Content::retornarListaIndicesDeMap(
+        unordered_map<string, unordered_map<string, double> >& origemIndices) {
+        vector<string> indices;
         indices.resize(origemIndices.size()); 
         size_t idx = 0;
         for (auto itm = origemIndices.begin(); itm != origemIndices.end(); itm++) {
@@ -233,17 +235,17 @@ namespace Arquivos {
     }
 
     void Content::calcularIdfPalavras(
-        std::unordered_map<std::string, std::vector<std::string> >& palavrasChaveDocumentos,
-        std::vector<std::string>& listaPalavras
+        unordered_map<string, vector<string> >& palavrasChaveDocumentos,
+        vector<string>& listaPalavras
     ) {
-        std::map<std::string, double> listaIdfPalavras;
+        map<string, double> listaIdfPalavras;
         for(auto itd = listaPalavras.begin(); itd != listaPalavras.end(); itd++) {
                 listaIdfPalavras.insert(
-                    std::pair<std::string, double>(*itd, TfIdf::idf(palavrasChaveDocumentos, *itd)));
+                    pair<string, double>(*itd, TfIdf::idf(palavrasChaveDocumentos, *itd)));
         }
     }
 
-    void Content::calcularIdfPalavra(const std::vector<std::string>& palavras) {
+    void Content::calcularIdfPalavra(const vector<string>& palavras) {
         for (auto palavra = palavras.begin(); palavra != palavras.end(); palavra++) {
             if (indiceIdfPalavras.count(*palavra) == 0) {
                 indiceIdfPalavras[*palavra] = 1;
@@ -260,107 +262,33 @@ namespace Arquivos {
             size_t atual = prox + 1;
             prox = texto.find_first_of(delimitador, atual);
             tokens.push_back(texto.substr(atual, (prox - atual)));
-        } while(prox != std::string::npos);
+        } while(prox != string::npos);
         return tokens;
     }
 
-    void Content::calcularSimilaridades() {
-        for (auto itm1 = biblioteca.begin(); itm1 != biblioteca.end(); itm1++) {
-            for (auto itm2 = biblioteca.begin(); itm2 != biblioteca.end(); itm2++) {
-                if (itm1->first != itm2->first) {
-                    /*auto cossenoPlot = Cosseno::calcularSimilaridade(
-                        this->indiceInvertidoTfDocumentosPalavras,
-                        palavrasChaveDocumentos,
-                        itm1->first,
-                        itm2->first);*/
-                    auto diceVetor = Dice::calcularCoeficiente(itm1->second, itm2->second);
-                    //auto similaridade = (cossenoPlot + diceVetor) / 2.0;
-                    auto similaridade = diceVetor;
-                    similaridades[itm1->first][itm2->first] = similaridades[itm1->first][itm2->first] = similaridade;
-                }
-            }
-        }
-    }
-
-    void Content::predicao(const std::string& caminho) {
-        auto arquivo = std::ifstream (caminho);
-        std::string linha;
+    void Content::predicao(const string& caminho) {
+        auto arquivo = ifstream (caminho);
+        string linha;
 
         // descarta linha titulo
-        std::getline(arquivo, linha, '\n');
-        std::cout << "UserId:ItemId,Prediction" << std::endl;
+        getline(arquivo, linha, '\n');
+        cout << "UserId:ItemId,Prediction" << endl;
         while(arquivo.good()){
-            std::getline(arquivo, linha, '\n');
+            getline(arquivo, linha, '\n');
             if (linha != "") {
                 auto par_usuario_item_id = parseAlvos(linha);
-                auto predicao = predizer(
-                    std::get<0>(par_usuario_item_id),
-                    std::get<1>(par_usuario_item_id));
-                std::cout << std::get<0>(par_usuario_item_id) << ":" << std::get<1>(par_usuario_item_id) << "," << predicao << std::endl;          
+                auto predicao = Preditor::predizer(
+                    historicoUsuario,
+                    indiceInvertidoTfDocumentosPalavras,
+                    similaridades,
+                    biblioteca,
+                    palavrasChaveDocumentos,
+                    indiceIdfPalavras,
+                    get<0>(par_usuario_item_id),
+                    get<1>(par_usuario_item_id));
+                cout << get<0>(par_usuario_item_id) << ":" << get<1>(par_usuario_item_id) << "," << predicao << endl;          
             }
         }
         arquivo.close();
-    }
-
-    double Content::predizer(const std::string& usuarioId, const std::string& itemId) {
-        return calcularSimilaridadeItemAtualItensHistoricosUsuario(itemId, usuarioId);
-        // return calcularPredicaoAPartirVetorMedioUsuario(itemId, usuarioId);
-    }
-
-    double Content::calcularPredicaoAPartirVetorMedioUsuario(
-        const std::string& itemId, const std::string& usuarioId) {
-        double num = 0.0;
-        double den1, den2;
-        den1 = den2 = 0.0;
-        for(auto it = listaPalavras.begin(); it != listaPalavras.end(); it++) {
-            double sim1 = vetorMedioPorUsuario[usuarioId][*it];
-            double sim2 = indiceTfDocumentosPalavras[itemId][*it];
-            if (vetorMedioPorUsuario[usuarioId].count(*it) > 0 && indiceTfDocumentosPalavras[itemId].count(*it) > 0) {
-                num += sim1 * sim2;
-            }
-            den1 += sim1 * sim1;
-            den2 += sim2 * sim2;
-        }
-        if (den1 == 0.0 || den2 == 0.0) {
-            return retornarAmostraDistribuicaoDados(4.659206, 7.962903);
-        }
-        return num/(std::sqrt(den1) * std::sqrt(den2));
-    }
-
-    double Content::calcularSimilaridadeItemAtualItensHistoricosUsuario(
-        const std::string& itemId, const std::string& usuarioId) {
-        if (biblioteca.count(itemId) == 0) {
-            return std::round(retornarAmostraDistribuicaoDados(4.659206, 7.962903));
-        }
-        double num = 0;
-        double den = 0;
-        for(auto it = historicoUsuario[usuarioId].begin(); it != historicoUsuario[usuarioId].end(); it++) {
-            if (similaridades[itemId].count(it->first) == 0) {
-                auto similaridadeCosseno = Cosseno::calcularSimilaridade(
-                    this->indiceInvertidoTfDocumentosPalavras,
-                    palavrasChaveDocumentos,
-                    this->indiceIdfPalavras,
-                    itemId,
-                    it->first);
-
-                // auto similaridadeDice = Dice::calcularCoeficiente(biblioteca[itemId], biblioteca[it->first]);
-                // auto similaridade = (similaridadeCosseno + similaridadeDice) / 2.0;
-                auto similaridade = similaridadeCosseno;
-                similaridades[itemId][it->first] = similaridades[itemId][it->first] = similaridade;
-            }
-
-            num += similaridades[itemId][it->first] * it->second.get()->avaliacao;
-            den += similaridades[itemId][it->first];
-        }
-        if ((int)std::abs(den) == 0) { 
-            return std::round(retornarAmostraDistribuicaoDados(4.659206, 7.962903));
-        }
-        return std::round(num/den);
-    }
-
-    double Content::retornarAmostraDistribuicaoDados(double shape, double scale) {
-        std::default_random_engine gen;
-        std::weibull_distribution<double> dist(shape, scale);
-        return std::floor(dist(gen));
     }
 }

@@ -1,7 +1,7 @@
 #ifndef DICE_H
 #define DICE_H
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <memory>
 #include <map>
 

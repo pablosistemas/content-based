@@ -1,4 +1,4 @@
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <iostream>
 #include <fstream>
 
@@ -23,7 +23,7 @@ int main (int argc, char** argv) {
 
     conteudo.construirInformacoesSobreItens(std::string(argv[1]));
 
-    conteudo.preProcessarDocumento(false);
+    conteudo.preProcessarDocumento(true);
 
     conteudo.construirHistoricoUsuarios(std::string(argv[2]));
 

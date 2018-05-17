@@ -1,0 +1,5 @@
+**/data/*
+!**/data/stop_words_english.txt
+**/bin/*
+**/doc/*
+!**/doc/pa2.pdf

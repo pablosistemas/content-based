@@ -3,7 +3,7 @@
 
 #include "../Estruturas/Item/Item.h"
 
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <unordered_map>
 #include <memory>
 #include <vector>
@@ -59,8 +59,6 @@ namespace Arquivos {
         void calcularSimilaridades();
         double calcularSimilaridadeItemAtualItensHistoricosUsuario(const std::string&, const std::string&);
         double calcularPredicaoAPartirVetorMedioUsuario(const std::string&, const std::string&);
-
-        double retornarAmostraDistribuicaoDados(double, double);
 
         void pegarListaIndices();
 

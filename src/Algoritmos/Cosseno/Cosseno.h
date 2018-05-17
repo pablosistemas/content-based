@@ -2,7 +2,7 @@
 #define COSSENO_H
 
 #include "../../Estruturas/Item/Item.h"
-#include <jsoncpp/json/json.h>
+#include <json/json.h>
 #include <unordered_map>
 #include <vector>
 #include <memory>
